@@ -1,0 +1,23 @@
+
+**** Administrator power shell: ****
+
+cd "C:\Program Files\Docker\Docker"
+
+./DockerCli.exe -SwitchDaemon
+./DockerCli.exe -SwitchDaemon
+
+ (2 φορες την γραφουμε)
+
+
+
+**** cmd ****
+
+docker pull cassandra:latest
+
+
+
+**** START CASSANDRA ****
+
+docker network create cassandra
+
+docker run --rm -d --name cassandra --hostname cassandra --network cassandra cassandra

@@ -1,0 +1,194 @@
+# **** Administrator power shell: ****
+# cd "C:\Program Files\Docker\Docker"
+# ./DockerCli.exe -SwitchDaemon
+# ./DockerCli.exe -SwitchDaemon
+# (2 φορες την γραφουμε)
+
+# **** cmd ****
+# docker pull cassandra:latest
+ 
+# **** START CASSANDRA ****
+# docker network create cassandra
+# docker run --rm -d --name cassandra --hostname cassandra --network cassandra cassandra
+
+/*
+edw: cmd sto bin
+cmd: cassandra
+cmd: cqlsh
+Create a keyspace
+USE keyspace;
+*/
+
+Data types: https://medium.com/informatics/cassandra-table-7c60be407375
+
+*************************************
+
+#Create a keyspace
+CREATE KEYSPACE IF NOT EXISTS store WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replication_factor' : '1' };
+
+#Create a table
+CREATE TABLE IF NOT EXISTS store.shopping_cart (
+userid text PRIMARY KEY,
+item_count int,
+last_update_timestamp timestamp
+);
+
+#Insert some data
+INSERT INTO store.shopping_cart
+(userid, item_count, last_update_timestamp)
+VALUES ('9876', 2, toTimeStamp(now()));
+
+INSERT INTO store.shopping_cart
+(userid, item_count, last_update_timestamp)
+VALUES ('1234', 5, toTimeStamp(now()));
+
+*************************************
+
+1.Get keyspaces info. 
+SELECT * FROM system_schema.keyspaces;
+
+2.Get tables info. 
+SELECT keyspace_name, table_name FROM system_schema.tables WHERE keyspace_name = 'keyspace name';
+
+3.Get table info. 
+SELECT * FROM system_schema.columns WHERE keyspace_name = 'keyspace_name' AND table_name = 'table_name';
+
+************************************
+
+
+SELECT * FROM system_schema.columns
+WHERE keyspace_name = 'data';
+
+
+ keyspace_name | table_name  | column_name | clustering_order | column_name_bytes    | kind          | position | type
+---------------+-------------+-------------+------------------+----------------------+---------------+----------+-----------
+          data | genome_tags |         tag |             none |             0x746167 |       regular |       -1 |     ascii
+          data | genome_tags |       tagid |             none |         0x7461676964 | partition_key |        0 |       int
+          data |       movie |      genres |             none |       0x67656e726573 |       regular |       -1 |     ascii
+          data |       movie |     movieid |             none |     0x6d6f7669656964 | partition_key |        0 |       int
+          data |       movie |       title |             none |         0x7469746c65 |       regular |       -1 |     ascii
+          data |          px |      genres |             none |       0x67656e726573 |       regular |       -1 |     ascii
+          data |          px |     movieid |             none |     0x6d6f7669656964 | partition_key |        0 |       int
+          data |          px |       title |             none |         0x7469746c65 |       regular |       -1 |     ascii
+          data |         pxx |     movieid |             none |     0x6d6f7669656964 |       regular |       -1 |       int
+          data |         pxx |         tag |             none |             0x746167 |       regular |       -1 |      text
+          data |         pxx |   timestamp |             none | 0x74696d657374616d70 |       regular |       -1 | timestamp
+          data |         pxx |      userid |             none |       0x757365726964 | partition_key |        0 |       int
+          data |      rating |     movieid |             none |     0x6d6f7669656964 |       regular |       -1 |       int
+          data |      rating |      rating |             none |       0x726174696e67 |       regular |       -1 |     float
+          data |      rating |   timestamp |             none | 0x74696d657374616d70 |       regular |       -1 | timestamp
+          data |      rating |      userid |             none |       0x757365726964 | partition_key |        0 |       int
+          data |         tag |     movieid |             none |     0x6d6f7669656964 |       regular |       -1 |       int
+          data |         tag |         tag |             none |             0x746167 |       regular |       -1 |     ascii
+          data |         tag |   timestamp |             none | 0x74696d657374616d70 |       regular |       -1 | timestamp
+          data |         tag |      userid |             none |       0x757365726964 | partition_key |        0 |       int
+
+
+************************************
+
+
+CREATE KEYSPACE data WITH REPLICATION = { 'class' : 'NetworkTopologyStrategy', 'datacenter1' : '1' } ;
+
+USE data;
+
+CREATE TABLE IF NOT EXISTS data.movie (  
+movieId int PRIMARY KEY,  
+title ascii,  
+genres ascii
+);
+
+DROP TABLE data.movie;
+SELECT * FROM data.movie;
+
+COPY data.movie (movieId, title, genres) 
+FROM 'C:\Users\vasil\Desktop\movie.csv' 
+WITH HEADER = TRUE;
+
+
+SELECT * FROM data.movies limit 5;
+
+SELECT * FROM data.movies PER PARTITION LIMIT 1;
+
+SELECT * FROM data.movies WHERE movieId = 1;
+
+SELECT * FROM data.movies WHERE rating = 3.5;
+
+SELECT * FROM data.movies WHERE genres = "Adventure%";
+ALLOW FILTERING;
+
+SELECT * FROM data.movies WHERE movieId = 1
+ALLOW FILTERING;
+
+
+CREATE TABLE IF NOT EXISTS data.rating (  
+userId int PRIMARY KEY,  
+movieId int,  
+rating float,
+timestamp timestamp
+);
+
+COPY data.rating (userId, movieId, rating, timestamp) 
+FROM 'C:\Users\vasil\Desktop\rating.csv' 
+WITH HEADER = TRUE;
+
+SELECT * FROM data.rating WHERE movieId = 7120;
+
+
+
+CREATE TABLE IF NOT EXISTS data.genome_tags (  
+tagId int PRIMARY KEY,  
+tag ascii
+);
+
+COPY data.genome_tags (tagId, tag) 
+FROM 'C:\Users\vasil\Desktop\genome_tags.csv' 
+WITH HEADER = TRUE;
+
+
+CREATE TABLE IF NOT EXISTS data.tag (  
+userId int PRIMARY KEY,  
+movieId int,  
+tag ascii,
+timestamp timestamp
+);
+
+COPY data.tag (userId, movieId, tag, timestamp) 
+FROM 'C:\Users\vasil\Desktop\tag.csv' 
+WITH HEADER = TRUE;
+
+
+
+
+
+
+#px
+CREATE TABLE IF NOT EXISTS data.pxx (  
+userId int PRIMARY KEY,  
+movieId int,  
+tag text,
+timestamp timestamp
+);
+
+COPY data.pxx (userId, movieId, tag, timestamp) 
+FROM 'C:\Users\vasil\Desktop\px.csv' 
+WITH DELIMITER='|' AND HEADER=TRUE;
+
+DROP TABLE data.pxx;
+SELECT * FROM data.pxx;
+
+COPY data.pxx FROM 'C:\Users\vasil\Desktop\px.csv' WITH DELIMITER='|' AND HEADER=TRUE
+
+DROP TABLE data.movie;
+SELECT * FROM data.movie;
+
+DROP TABLE data.px;
+SELECT * FROM data.pxx;
+
+DROP TABLE data.tag;
+SELECT * FROM data.tag;
+
+DROP TABLE data.genome_tags;
+SELECT * FROM data.genome_tags;
+
+DROP TABLE data.rating;
+SELECT * FROM data.rating;
